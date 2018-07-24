@@ -7,6 +7,10 @@ SoftwareSerial mySerial(2, 3);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 // RELAY NO. 3 IS CONNECTED TO POWER SUPPLY
+
+int sent_data = 7;
+int recive_data = 6;
+
 int input_read = 2;            // is input to finget print module
 int pass_circuit = 11;         // connected to relay no. 5
 int output_data = 13;          // relay no. 1 and 6 connected
@@ -31,7 +35,7 @@ void key_insert() {
     //    here data should be come from digital read and pass with relay no. 7
 
     //    READ DATA OF HIGH DIGITAL PIN
-    data = digitalRead(input_read);
+    data = digitalRead(recive_data);
     Serial.print("print digital read inside key_insert data is : ");   Serial.println(data);
     delay(150);
     if (data == 1) {
@@ -41,6 +45,11 @@ void key_insert() {
     }
     if (data == 0) {
       digitalWrite(output_data, LOW );
+      variable_for_out_while_loop = 1;
+      Serial.print(" variable_for_out_while_loop is ");Serial.println( variable_for_out_while_loop);
+      
+      controll_finger_print();
+
       //OFF EVERY REVELENT DIGITAL SWITCH AND RETURN
       //variable_for_out_while_loop=1  ACCORDING TO CONDITION IF POSSIBLE
       Serial.println("  key is OFF and power supply is OFF  ");
@@ -51,7 +60,9 @@ void key_insert() {
 //.................................  get finger print id  with verification
 int getFingerprintIDez() {
   while (true) {
-    while (! Serial.available());
+    Serial.println("inside get finger print  while loop");
+//    Serial.println("enter any integer and press enter");
+//    while (! Serial.available());
     uint8_t p = finger.getImage();
     if (p != FINGERPRINT_OK)  return -1;
     p = finger.image2Tz();
@@ -63,6 +74,7 @@ int getFingerprintIDez() {
     if (finger.confidence >= 70) {
 
       //      high digital pin to read for  calling  contoll finger print ;
+      digitalWrite(sent_data, HIGH);
       return  finger.confidence;
     }
   }
@@ -71,11 +83,13 @@ int getFingerprintIDez() {
 int controll_finger_print() {
   if (variable_for_out_while_loop == 1) {
     while (true) {
-      Serial.println("inside while loop key insert");
+       Serial.println("enter any integer and press enter");
+    while (! Serial.available());
+      Serial.println("inside control finger print  while loop");
       int confidence_data =  getFingerprintIDez();
       Serial.println(confidence_data);
       if (confidence_data >= 70) {
-        Serial.println("inside iffff");
+        Serial.println("inside IF of control finger print ()");
         variable_for_out_while_loop = 2;
         return confidence_data;
       }
@@ -99,6 +113,8 @@ void setup() {
 
   Serial.println("wELCOME IN SECCURITY SYSTEM SOLUTIONS... :");
   //  Serial.println(data);
+  pinMode(recive_data, INPUT);
+  pinMode(sent_data, OUTPUT);
   pinMode(output_relay_four, OUTPUT);
   pinMode(pass_circuit, OUTPUT);
   pinMode(output_relay_two, OUTPUT);
@@ -121,11 +137,11 @@ void setup() {
 
 void loop() {
 
-  int confidence_daata_of_finger_print = controll_finger_print();
+  int confidence_data_of_finger_print = controll_finger_print();
   if (confidence_data_of_finger_print >= 70) {
     //call key insert function
   }
-  Serial.print("finger  id CONFIDENCE is ");
+  Serial.println("finger  id CONFIDENCE is ");
   //  Serial.println(finger_id);
 
   //  if (finger_id) {
@@ -138,7 +154,7 @@ void loop() {
   //  while (check_data == 0) {
   //    if (!Serial.available()) {
   //      Serial.println("inside not serial");
-  //      key_insert();
+        key_insert();
   //      delay(100);
   //    }
   //    //    Serial.println("WELCOME IN SECURITY LOOP ........ ");
