@@ -2,18 +2,6 @@
 
 //what is effect of baurd rate
 
-
-
-
-
-
-
-
-
-
-
-
-
 #include <Adafruit_Fingerprint.h>
 #include<TimerOne.h>
 #include <SoftwareSerial.h>
@@ -23,11 +11,11 @@ SoftwareSerial mySerial(2, 3);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 // RELAY NO. 3 IS CONNECTED TO POWER SUPPLY
-
+int array[5];
 int sent_data = 7;
-int recive_data = 6;
+int recive_data = A0;
 
-int input_read = 2;            // is input to finget print module
+int input_read = 2;            // is input to finget print modulemMm
 int pass_circuit = 11;         // connected to relay no. 5
 int output_data = 13;          // relay no. 1 and 6 connected
 int output_relay_two = 10;     // relay no. 2                                                                                                                                                                                                      relay no. 2
@@ -36,9 +24,46 @@ int data = 0;
 String password;
 //String vipin = "VIPIN";
 int count = 0;
-int count_again = 0;
+//int count_again = 0;
 
 int variable_for_out_while_loop = 1;
+
+
+
+
+
+
+//........................................................array
+
+int array_average() {
+  int sum = 0;
+  for (int i = 0; i < 5; i++) {
+//    Serial.println("values in array");
+    //here analog data is read and add to array
+    int data = analogRead(A0);
+//    Serial.println(data);
+    array[i] = data;
+    sum = sum + array[i];
+
+//    Serial.println(array[i]);
+  }
+  Serial.print("sum of number      ");    Serial.println(sum);
+  int average = sum / 5;
+  Serial.print("average is ");               Serial.println(average);
+  for (int i = 0; i < 5; i++)
+  {
+    array[i] = 0;
+  }
+
+//  Serial.println("new array is ");
+  for (int i = 0; i < 5; i++)
+  {
+
+//    Serial.println(array[i]);
+  }
+  return average;
+}
+
 // ........................................................ key insert
 void key_insert() {
   while (true) {
@@ -68,7 +93,7 @@ void key_insert() {
       Serial.print(" variable_for_out_while_loop is "); Serial.println( variable_for_out_while_loop);
       //OFF EVERY REVELENT DIGITAL SWITCH AND RETURN
       //variable_for_out_while_loop=1  ACCORDING TO CONDITION IF POSSIBLE
-      controll_finger_print();
+      controll_finger_print();  
       Serial.println("  key is OFF and power supply is OFF  ");
       delay(150);
     }
@@ -123,58 +148,70 @@ int controll_finger_print() {
 
 //..................................................bluetooth
 void bluetooth() {
-
   ///fingerprint call...
   //fingerprint verify
-
-  controll_finger_print();
-
-  Serial.println("bluetooth  function is called :  ");
-  digitalWrite(pass_circuit, LOW);
-  digitalWrite(output_relay_four, HIGH);   // turn the LED on (HIGH is the voltage level)
-  digitalWrite(output_relay_two, HIGH);    // turn the LED on (HIGH is the voltage level)
-  data = digitalRead(recive_data);
-  //  Serial.print("print digital read inside bluetooth  data is : "); Serial.println(data);
-  delay(150);
-  if (data == 1) {
-    count_again = count_again + 1;
-    int x = bike_on_function();
-  }
-}
-
-
-
-//.............................................bike on function
-int bike_on_function() {
   while (1) {
-    //    Serial.println("count is 2 and data is 1");
-    Serial.println("  bike ONN... with bluetooth ");
-    digitalWrite(output_data, HIGH);
-    delay(500);
-    //    here input_read is replaced by recived data
+    controll_finger_print();
+
+    Serial.println("bluetooth  function is called :  ");
+    digitalWrite(pass_circuit, LOW);
+    digitalWrite(output_relay_four, LOW                                                                                                                                                                                             );   // turn the LED on (HIGH is the voltage level)
+    digitalWrite(output_relay_two, LOW);    // turn the LED on (HIGH is the voltage level)
+    //    data = analogRead(recive_data);
+    //      Serial.print("print analog  read inside bluetooth  data is : "); Serial.println(data);
+    //    delay(150);
+
+
+    //here function array average is called
+    int return_average = array_average();
+
+    if (return_average > 1000) {
+      Serial.println("bike ONN... with bluetooth ");
+      digitalWrite(output_data, HIGH);
+      //    delay(1000);
+    }
+
+    if (return_average < 1000) {
+      Serial.println("bike off with bluetooth");
+      digitalWrite(output_data, LOW);
+      controll_finger_print();
+      //    delay(1000);
+    }
+
     String  read_string = string_read();
     if (read_string == "STOP") {
       stop_while_bluetooth();
     }
   }
+}
+
+//.............................................bike on function
+int bike_on_function() {
+
+  //    Serial.println("count is 2 and data is 1");
+  Serial.println("bike ONN... with bluetooth ");
+  digitalWrite(output_data, HIGH);
+  delay(100);
+  //here input_read is replaced by recived data
+  String  read_string = string_read();
+  if (read_string == "STOP") {
+    stop_while_bluetooth();
+  }
+
   //  delay(150);
 }
 
 
 //....................................................bike function off
 int bike_function_off () {
-  while (1) {
-    digitalWrite(output_data, LOW );
-    //    Serial.println("count is 2 and data is 0");
-    Serial.println("bike off");
-    //    read from pin no. 6  data of digitalpin no. 7
-    int data = digitalRead(recive_data);
-    if (data == 1) {
-      //Serial.println("inside bike OFF  function IN while  in if statment : ");
-      count_again = 0;
-      delay(150);
-      return count_again;
-    }
+
+  digitalWrite(output_data, LOW );
+  // Serial.println("count is 2 and data is 0");
+  Serial.println("bike off");
+  //read from pin no. 6  data of digitalpin no. 7
+  String  read_string = string_read();
+  if (read_string == "STOP") {
+    stop_while_bluetooth();
   }
 }
 
@@ -185,29 +222,42 @@ void bypass_bluetooth() {
   //  AFTER VERIFY BY OWNER RETURN INTO THE MAIN LOOP
   //  inside bypass bluetooth function bypass only on fingrtprint module not key .
   //  NOW MODIFY THIS FUNCTION ACCORDING TO THEM
-
   //  hrer to bypass only finger print not key so,
   //  low relay no. 2
-  //   high relay no. 3   realy of 12 volt.
+  //  high relay no. 3   realy of 12 volt.
   //  low relay no. 4
-
-  Serial.print("inside pass function");
-  digitalWrite(output_relay_two, LOW);  //correct
-  digitalWrite(output_relay_four, LOW); //correc
-  data = digitalRead(recive_data);
-  Serial.print("print digital read inside key_insert data is : ");   Serial.println(data);
-  delay(150);
   while (true) {
-    //    if bike off on low exceletor and signal wothouut off the key
+    Serial.println("inside pass function");
+    digitalWrite(output_relay_two, LOW);  //correct
+    digitalWrite(output_relay_four, LOW); //correc
+    delay(500);
+    data = digitalRead(recive_data);
+    Serial.print("print digital read inside key_insert data is : ");   Serial.println(data);
+    //    if bike off on.
+    //    low exceleqtor and signal wothouut off the key
     if (data == 1) {
       digitalWrite(output_data, HIGH);
       Serial.println("key is ON and power supply is ON");
       //      delay(100);
       String  read_string = string_read();
       if (read_string == "STOP") {
-        stop_while_bluetooth();
+        //        return can be used insted of   stop_while_bluetooth();
+        return ;
+        //        stop_while_bluetooth();
       }
     }
+    if (data == 0) {
+      digitalWrite(output_data, LOW);
+      Serial.println("key is OFF and power supply is OFF");
+      //      delay(100);
+      String  read_string = string_read();
+      if (read_string == "STOP") {
+        //        return can be used insted of   stop_while_bluetooth();
+        //        stop_while_bluetooth();
+        return ;
+      }
+    }
+
   }
 
   //  delay(1000);
@@ -282,10 +332,10 @@ void setup() {
 
 void loop() {
 
-  //    int confidence_data_of_finger_print = controll_finger_print();
-  //    if (confidence_data_of_finger_print >= 70) {
-  //      //call key insert function
-  //    }
+  //      int confidence_data_of_finger_print = controll_finger_print();
+  //      if (confidence_data_of_finger_print >= 70) {
+  //call key insert function
+  //      }
 
 
   //  Serial.print("finger  id CONFIDENCE is ");  Serial.println(finger_id);
@@ -298,7 +348,7 @@ void loop() {
   while (check_data == 0) {
     //    if (!Serial.available()) {
     //      Serial.println("inside not serial");
-    //      key_insert();
+    //          key_insert();
     //      delay(100);
     //    }
     //    Serial.println("WELCOME IN SECURITY LOOP ........ ");
@@ -312,8 +362,10 @@ void loop() {
       if (read_string != "VIPIN" && read_string != "STOP" && read_string != "PASS") {
         serial_read();
       }
-      //      key and fingerprint is bypass here password is pass
+
+      // key and fingerprint is bypass here password is pass
       if (read_string == "PASS") {
+        digitalWrite(sent_data, HIGH);
         bypass_bluetooth() ;
       }
       if (read_string == "VIPIN") {
